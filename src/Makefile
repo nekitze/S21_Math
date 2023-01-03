@@ -12,6 +12,8 @@ EXECUTABLE=
 
 all: s21_math.a 
 
+test: quick_check
+
 s21_math.a: library
 
 basic_math_obgects:
@@ -81,4 +83,16 @@ quick_check_mac:
 		make clean
 			make unit_test_mac
 				./s21_test
+
+leaks_check_ubuntu:
+	clear
+	make clean
+	make unit_test
+	valgrind --trace-children=yes --track-fds=yes --track-origins=yes --leak-check=full --show-leak-kinds=all ./s21_test 
+
+leaks_check_mac:
+	clear
+	make clean
+	make unit_test_mac
+	leaks -quiet -atExit -- ./s21_test 
 
