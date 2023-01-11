@@ -133,10 +133,10 @@ long double s21_asin(double x) {
 
 long double s21_log(double x) {
   long double ans = 1000, S = x;
-  if (S == 0)
-    ans = -S21_MIN_INF;
-  else if (S < 0)
+  if (S < 0)
     ans = S21_NAN;
+  else if (s21_fabs(S) < 1e-6)
+    ans = S21_MIN_INF;
   else if (S != S)
     ans = S21_NAN;
   else if (S == S21_INF)
@@ -144,22 +144,13 @@ long double s21_log(double x) {
   else if (S == S21_MIN_INF)
     ans = S21_NAN;
   else if (S > 0) {
-    int decs = 0;
-    while (S > 1) {
-      S /= 10;
-      ++decs;
-    }
-    S -= 1;
-    long double ans0 = 0, S0 = S;
-    for (int i = 1; s21_fabs(S / i) > S21_EPS_TAYLOR; ++i) {
+    long double ans0 = 0;
+    for (int i = 1; ((i < 5500) && (s21_fabs(s21_fabs(ans) - s21_fabs(ans0)) >
+                                    S21_EPS_TAYLOR));
+         ++i) {
       ans = ans0;
-      ans0 += S / i;
-      S *= -S0;
+      ans0 += 2 * (x - s21_exp(ans0)) / (x + s21_exp(ans0));
     }
-    ans = ans0;
-    ans += decs * S21_LN10;
-  } else {
-    ans = S21_NAN;
   }
   return ans;
 }
@@ -191,9 +182,8 @@ long double s21_sqrt(double x) {
 }
 
 long double to_range(double x) {
-  while (x < -S21_M_PI || x > S21_M_PI) {
-    x -= 2 * S21_M_PI;
-  }
+  long long int y = x / 2 / S21_M_PI;
+  x = x - y * 2 * S21_M_PI - 2 * S21_M_PI;
   return x;
 }
 
@@ -203,15 +193,15 @@ long double s21_sin(double x) {
     ans = S21_NAN;
   else {
     x = to_range(x);
-    double temp = x;
-    long double n = 1., con = x;
-    while (s21_fabs(temp) > S21_EPS_TAYLOR) {
-      temp = (s21_pow(-1., n) * s21_pow(con, 2. * n + 1.)) /
-             s21_factorial(2. * n + 1.);
-      n += 1.;
-      x += temp;
+    long double n = 1, sign = 1, ans0 = 2, npow = x, fac = 1;
+    while (s21_fabs(s21_fabs(ans0) - s21_fabs(ans)) > S21_EPS_TAYLOR) {
+      ans0 = ans;
+      ans += sign * npow / fac;
+      sign *= -1;
+      npow *= x * x;
+      fac *= (2 * n) * (2 * n + 1);
+      ++n;
     }
-    ans = x;
   }
   return ans;
 }
@@ -219,18 +209,18 @@ long double s21_sin(double x) {
 long double s21_cos(double x) {
   long double ans = 0;
   if (s21_isnan(x) || !s21_isfinite(x))
-    return S21_NAN;
+    ans = S21_NAN;
   else {
     x = to_range(x);
-    double temp = x;
-    long double n = 1., con = x;
-    x = 1;
-    while (s21_fabs(temp) > S21_EPS_TAYLOR) {
-      temp = (s21_pow(-1., n) * s21_pow(con, 2. * n)) / s21_factorial(2. * n);
-      n += 1.;
-      x += temp;
+    long double n = 1, sign = 1, ans0 = 2, npow = 1, fac = 1;
+    while (s21_fabs(s21_fabs(ans0) - s21_fabs(ans)) > S21_EPS_TAYLOR) {
+      ans0 = ans;
+      ans += sign * npow / fac;
+      sign *= -1;
+      npow *= x * x;
+      fac *= (2 * n - 1) * (2 * n);
+      ++n;
     }
-    ans = x;
   }
   return ans;
 }
@@ -251,10 +241,6 @@ long double s21_floor(double x) {
   } else if ((s21_fabs((int)x - x) < S21_EPS) && (x < 0))
     ++ans;
   return ans;
-}
-
-long double s21_factorial(double x) {
-  return x == 0. ? 1. : x * s21_factorial(x - 1.);
 }
 
 long double s21_fabs(double x) {

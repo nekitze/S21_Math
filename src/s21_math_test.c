@@ -315,6 +315,7 @@ START_TEST(s21_acos_test_1) {
   long double s21_res = 0, res = 0;
   long double S = 0;
 
+  ck_assert_ldouble_eq_tol(s21_acos(1), acos(1), 1e-7);
   for (int i = 0; i < RADIANS; i++) {
     s21_res = s21_acos(radians[i]);
     res = acos(radians[i]);
@@ -375,11 +376,10 @@ START_TEST(sin_test_default) {
 END_TEST
 
 START_TEST(sin_test_zero) {
-  char result[32];
-  char assert[32];
-  sprintf(result, "%.6Lf", s21_sin(0));
-  sprintf(assert, "%.6f", sin(0));
-  ck_assert_str_eq(result, assert);
+  ck_assert_double_eq_tol((double)s21_sin(0), sin(0), 1e-7);
+  for (double i = -S21_M_PI; i < 2 * S21_M_PI; i += 0.010456011) {
+    ck_assert_double_eq_tol((double)s21_sin(i), sin(i), 1e-7);
+  }
 }
 END_TEST
 
